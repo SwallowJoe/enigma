@@ -1,0 +1,5 @@
+/home/jh/code/enigma/samples/MusicPlayer/build/CMakeFiles/rebuild_cache.dir
+/home/jh/code/enigma/samples/MusicPlayer/build/CMakeFiles/edit_cache.dir
+/home/jh/code/enigma/samples/MusicPlayer/build/src/CMakeFiles/rebuild_cache.dir
+/home/jh/code/enigma/samples/MusicPlayer/build/src/CMakeFiles/edit_cache.dir
+/home/jh/code/enigma/samples/MusicPlayer/build/src/CMakeFiles/MusicPlayerDemo.dir

@@ -1,2 +1,3 @@
 # enigma
-A little gui lib base Vulkan.
+
+A little gui lib based on Vulkan.
