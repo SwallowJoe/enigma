@@ -1,1 +1,0 @@
-/usr/bin/c++  -g   CMakeFiles/MusicPlayerDemo.dir/musicplayer_main.cpp.o  -o ../../bin/MusicPlayerDemo  -lglfw 
