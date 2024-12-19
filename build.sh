@@ -124,10 +124,11 @@ fi
 echo -e "${YELLOW}请选择操作：${NC}"
 echo -e "0. 构建并执行 (*默认)"
 echo -e "1. 仅构建"
-echo -e "2. MusicPlayer测试"
-echo -e "3. vulkaninfo"
-echo -e "4. glxinfo"
-echo -e "5. device info"
+echo -e "2. 清理项目"
+echo -e "3. MusicPlayer测试"
+echo -e "4. vulkaninfo"
+echo -e "5. glxinfo"
+echo -e "6. device info"
 
 if [ $# -ge 1 ]; then
     choice=$1
@@ -153,14 +154,18 @@ case $choice in
         ENIGMA_BUILD=true
         ;;
     2)
+        echo "清理项目"
+        ENIGMA_CLEAN=true
+        ;;
+    3)
         echo "MusicPlayer测试"
         TestMusicPlayer=true
         ;;
-    3)
+    4)
         echo -e "${YELLOW}vulkaninfo:${NC}"
         vulkaninfo
         ;;
-    4)
+    5)
         echo -e "${YELLOW}glxinfo:${NC}"
         glxinfo_output=$(glxinfo |grep -iE "OpenGL version")
         # 检查是否成功获取版本信息
@@ -181,7 +186,7 @@ case $choice in
             exit 1
         fi
         ;;
-    5)
+    6)
         # 打印系统信息
         echo -e "${YELLOW}Printing system information:${NC}"
         echo -e "${YELLOW}CPU:${NC}"
@@ -209,6 +214,24 @@ if [ "${ENIGMA_BUILD}" = true ];then
 
     # 进入build目录
     cd build || exit
+    # 执行cmake ..
+    cmake -DCMAKE_C_COMPILER=/usr/bin/gcc -DCMAKE_CXX_COMPILER=/usr/bin/g++ .. || { echo -e "${RED}cmake failed${NC}"; exit 1; }
+
+    # 执行make
+    make || { echo -e "${RED}make failed${NC}"; exit 1; }
+fi
+
+if [ "${ENIGMA_CLEAN}" = true ];then
+    # 获取当前脚本所在目录
+    SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+    # 检查并创建build目录
+    if [ ! -d "build" ]; then
+        echo "clean finish."
+    else
+        # 进入build目录
+        rm -rf build
+        echo "clean finish."
+    fi
 fi
 
 if [ "${TestMusicPlayer}" = true ];then

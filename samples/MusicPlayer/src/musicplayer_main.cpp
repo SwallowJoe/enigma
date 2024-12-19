@@ -6,8 +6,11 @@
 #include <iostream>
 #include "gelf.h"
 
+#include "include/core/EgPoint.h"
+
 int main(int argc, char const *argv[])
 {
+    // EgPoint p;
     std::cout<<"Music Player running..."<<std::endl;
      // 初始化 GLFW 库
     if (!glfwInit()) {
