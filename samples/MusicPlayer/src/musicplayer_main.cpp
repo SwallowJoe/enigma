@@ -10,8 +10,8 @@
 
 int main(int argc, char const *argv[])
 {
-    // EgPoint p;
-    std::cout<<"Music Player running..."<<std::endl;
+    EgPoint p{3, 4};
+    std::cout<<"Music Player running..."<<p.length()<<std::endl;
      // 初始化 GLFW 库
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");

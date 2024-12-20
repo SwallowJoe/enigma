@@ -2,7 +2,7 @@
 set(ENIGMA_PATH "${ROOT_DIR}/../../output")
 link_directories(${ENIGMA_PATH})
 # 设置库头文件目录
-set(ENIGMA_HEADS_PATH "${ROOT_DIR}/../../src")
+set(ENIGMA_HEADS_PATH "${ROOT_DIR}/../../enigma")
 
 message("lib path:" ${ENIGMA_PATH})
 message("lib head path:" ${ENIGMA_HEADS_PATH})

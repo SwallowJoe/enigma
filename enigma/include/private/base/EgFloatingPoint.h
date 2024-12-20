@@ -10,6 +10,19 @@ constexpr float EG_FloatSqrt2   = 1.41421356f;
 constexpr float EG_FloatPI      = 3.14159265f;
 constexpr double EG_DoublePI    = 3.14159265325979323846264338327950288;
 
+
+#define EG_FloatMax                     std::numeric_limits<float>::max()
+#define EG_FloatMin                     std::numeric_limits<float>::min()
+#define EG_FloatNaN                     std::numeric_limits<float>::quiet_NaN()
+#define EG_FloatInfinity                (+std::numeric_limits<float>::infinity())
+#define EG_FloatNegativeInfinity        (-std::numeric_limits<float>::infinity())
+
+#define EG_DoubleMax                    std::numeric_limits<double>::max()
+#define EG_DoubleMin                    std::numeric_limits<double>::min()
+#define EG_DoubleNaN                    std::numeric_limits<double>::quiet_NaN()
+#define EG_DoubleInfinity               (+std::numeric_limits<double>::infinity())
+#define EG_DoubleNegativeInfinity       (-std::numeric_limits<double>::infinity())
+
 /**
  * 计算单精度浮点数的平方根。
  * @param x 单精度浮点数。
@@ -126,6 +139,16 @@ constexpr double EG_DoublePI    = 3.14159265325979323846264338327950288;
 #define eg_float_log(x)             logf(x)
 
 /**
+ * 计算单精度浮点数的幂。
+ * @param base 单精度浮点数，幂的底数。
+ * @param exponent 单精度浮点数， 幂的指数。
+ * @return base 的 exponent 次幂。
+ */
+static inline float eg_float_pow(float base, float exponent) {
+    return powf(base, exponent);
+}
+
+/**
  * 将角度转换为弧度。
  * @param degrees 角度值，以度为单位。
  * @return 相同的值，转换为弧度。
@@ -161,6 +184,17 @@ static inline bool eg_float_isnan(float x) {
     return !(x == x);
 }
 
+/**
+ * 检查单精度浮点数是否为有限数。
+ * @param x 单精度浮点数。
+ * @return 如果 x 是有限数，返回 true；如果是无穷大或 NaN（非数字），返回 false。
+ *
+ * 该函数用于判断给定的浮点数 x 是否为有限数，即不是无穷大也不是 NaN。
+ */
+static inline bool eg_float_isfinite(float x) {
+    return EgFloatBits_IsFinite(x);
+}
+
 #define EG_MAXS32FitsInFloat        2147483520
 #define EG_MINS32FitsInFloat        -EG_MAXS32FitsInFloat
 
@@ -181,4 +215,85 @@ static inline int eg_float_saturate2int(float x) {
     x = x < EG_MAXS32FitsInFloat ? x : EG_MAXS32FitsInFloat;
     x = x > EG_MINS32FitsInFloat ? x : EG_MINS32FitsInFloat;
     return (int)x;
+}
+
+/**
+ * 计算双精度浮点数的向下取整值。
+ * @param x 双精度浮点数。
+ * @return 不大于 x 的最大整数。
+ */
+#define eg_double_floor(x)          floor(x)
+
+/**
+ * 计算双精度浮点数的四舍五入值。
+ * @param x 双精度浮点数。
+ * @return 四舍五入到最近的整数。
+ */
+#define eg_double_round(x)          floor((x) + 0.5)
+
+/**
+ * 计算双精度浮点数的向上取整值。
+ * @param x 双精度浮点数。
+ * @return 不小于 x 的最小整数。
+ */
+#define eg_double_ceil(x)           ceil(x)
+
+/**
+ * 将双精度浮点数向下取整并转换为整数。
+ * @param x 双精度浮点数。
+ * @return 不大于 x 的最大整数。
+ */
+#define eg_double_floor2int(x)      (int)eg_double_floor(x)
+
+/**
+ * 将双精度浮点数四舍五入并转换为整数。
+ * @param x 双精度浮点数。
+ * @return 四舍五入到最近的整数。
+ */
+#define eg_double_round2int(x)      (int)eg_double_round(x)
+
+/**
+ * 将双精度浮点数向上取整并转换为整数。
+ * @param x 双精度浮点数。
+ * @return 不小于 x 的最小整数。
+ */
+#define eg_double_ceil2int(x)       (int)eg_double_ceil(x)
+
+/**
+ * 将单精度浮点数四舍五入到最接近的整数。
+ * @param x 单精度浮点数。
+ * @return 四舍五入后的单精度浮点数。
+ */
+#define eg_float_round(x)          (float)eg_double_round((double)(x))
+
+
+/**
+ * 将单精度浮点数向下取整并转换为整数，同时进行饱和处理。
+ * @param x 单精度浮点数。
+ * @return 不大于 x 的最大整数，饱和处理后的值。
+ */
+#define eg_float_floor2int(x)       eg_float_saturate2int(eg_float_floor(x))
+
+/**
+ * 将单精度浮点数四舍五入并转换为整数，同时进行饱和处理。
+ * @param x 单精度浮点数。
+ * @return 四舍五入到最近的整数，饱和处理后的值。
+ */
+#define eg_float_round2int(x)       eg_float_saturate2int(eg_float_round(x))
+
+/**
+ * 将双精度浮点数转换为单精度浮点数, 忽略溢出
+ * @param x 双精度浮点数。
+ * @return 转换后的单精度浮点数。
+ */
+static inline float eg_double_to_float(double x) {
+    return static_cast<float>(x);
+}
+
+static inline float eg_ieee_float_divide(float numerator, float denominator) {
+    return numerator / denominator;
+}
+
+static inline float eg_ieee_double_divide(double numerator, double denominator) {
+    return numerator / denominator;
 }
