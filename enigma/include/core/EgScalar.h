@@ -1,20 +1,28 @@
 #pragma once
 
+#include "include/private/base/EgAssert.h"
 #include "include/private/base/EgFloatingPoint.h"
 
 typedef float EgScalar;
+
+///////////////////////////////////////////////////////////////////////
 
 #define EG_Scalar1                  1.0f
 #define EG_ScalarHalf               0.5f
 #define EG_ScalarPi                 3.14159265358979323846f
 #define EG_ScalarPiOver2            (EG_ScalarPi * 0.5f)
+#define EG_ScalarE                  2.7182818284590452354f
 
-#define Eg_ScalarE                  2.7182818284590452354f
-#define EgScalarMax                 3.402823466e+38F
-#define EgScalarMin                 -EgScalarMax
-#define EgScalarInfinity            EG_FloatInfinity
-#define EgScalarNegativeInfinity    EG_FloatNegativeInfinity
-#define EgScalarNaN                 EG_FloatNaN
+#define EG_ScalarMax                3.402823466e+38F
+#define EG_ScalarMin                -EgScalarMax
+#define EG_ScalarInfinity           EG_FloatInfinity
+#define Eg_ScalarNegativeInfinity   EG_FloatNegativeInfinity
+#define EG_ScalarNaN                EG_FloatNaN
+
+#define EG_ScalarNearlyZero         (EG_Scalar1 / (1 << 12))
+#define EG_ScalarSinCosNearZero     (EG_Scalar1 / (1 << 16))
+
+///////////////////////////////////////////////////////////////////////
 
 #define EgScalarFloorToScalar(x)    eg_float_floor(x)
 #define EgScalarCeilToScalar(x)     eg_float_ceil(x)
@@ -42,6 +50,12 @@ typedef float EgScalar;
 #define EgIntToFloat(x)             static_cast<float>(x)
 #define EgScalarTruncToInt(x)       eg_float_saturate2int(x)
 
+#define EgScalarAve(a, b)           ((a) + ((b) - (a)) * EG_ScalarHalf)
+#define EgScalarHalf(a)             ((a) * EG_ScalarHalf)
+
+#define EgDegreesToRadians(degrees) ((degrees) * (EG_ScalarPi / 180.0f))
+#define EgRadiansToDegrees(radians) ((radians) * (180.0f / EG_ScalarPi))
+#define EgScalarIsZero(v)           ((v) == 0.0f)
 
 static inline bool EgScalarIsFinite(EgScalar v) {
     return eg_float_isfinite(v);
@@ -49,4 +63,19 @@ static inline bool EgScalarIsFinite(EgScalar v) {
 
 static inline bool EgScalarIsNaN(EgScalar v) {
     return eg_float_isnan(v);
+}
+
+static inline EgScalar EgScalarSquare(EgScalar v) {
+    return v * v;
+}
+
+
+static inline bool EgScalarsEqual(const EgScalar a[], const EgScalar b[], int count) {
+    EgAssert(count >= 0);
+    for (int i = 0; i < count; ++i) {
+        if (a[i] != b[i]) {
+            return false;
+        }
+    }
+    return true;
 }

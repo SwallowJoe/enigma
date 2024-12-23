@@ -281,6 +281,15 @@ static inline int eg_float_saturate2int(float x) {
  */
 #define eg_float_round2int(x)       eg_float_saturate2int(eg_float_round(x))
 
+
+/**
+ * 
+ */
+#define eg_float_ceil2int(x)        eg_float_saturate2int(eg_float_ceil(x))
+
+
+#define eg_float_ceil2int_not_saturate (int)eg_float_ceil(x)
+
 /**
  * 将双精度浮点数转换为单精度浮点数, 忽略溢出
  * @param x 双精度浮点数。

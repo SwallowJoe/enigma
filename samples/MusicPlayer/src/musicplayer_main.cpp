@@ -7,10 +7,13 @@
 #include "gelf.h"
 
 #include "include/core/EgPoint.h"
+#include "include/core/EgRect.h"
 
 int main(int argc, char const *argv[])
 {
     EgPoint p{3, 4};
+    EgRect rect = EgRect::MakeWH(800, 600);
+
     std::cout<<"Music Player running..."<<p.length()<<std::endl;
      // 初始化 GLFW 库
     if (!glfwInit()) {
