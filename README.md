@@ -2,9 +2,30 @@
 
 A little gui lib based on Vulkan.
 
-## Arc
+## Architecture
 
 Mock of Skia to implement a 2D render engine.
+
+### Dependencies
+
+- Vulkan
+- glfw
+- libpng
+- libjpeg
+- libwebp
+- libtiff
+- libheif
+
+### Features
+
+- [x] 2D Render
+- [x] Image Decode
+- [x] Image Encode
+- [x] GLSL Shader Generator
+
+## Build
+
+使用根目录下的build.sh脚本即可。
 
 ## Sample
 

@@ -29,7 +29,7 @@ public:
     void reset();
 
     bool isAntiAlias() const {
-
+        return fWidth > 0;
     }
 
 private:
