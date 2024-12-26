@@ -23,5 +23,3 @@ template <typename S> constexpr unsigned EgToUInt(S x) { return EgTo<unsigned>(x
 template <typename S> constexpr size_t EgToSizeT(S x) { return EgTo<size_t>(x); }
 
 template <typename T> static constexpr bool EgToBool(const T& x) { return (bool)x; }
-
-

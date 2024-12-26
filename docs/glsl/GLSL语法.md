@@ -118,3 +118,54 @@ struct Vertex {
 
 Vertex vertex;
 ```
+
+## 内置变量
+
+GLSL 提供了一些内置变量，这些变量可以在着色器程序中使用。例如，`gl_Position` 是顶点着色器中的内置变量，用于设置顶点的位置。
+
+```glsl
+void main() {
+    gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+}
+```
+
+在 GLSL 中，有一些内置变量可以用于访问渲染管线的状态和数据。
+
+- `gl_Position`：顶点着色器输出的顶点位置。
+- `gl_FragCoord`：片元着色器输入的片元位置。
+- `gl_FragColor`：片元着色器输出的片元颜色。
+- `gl_ModelViewMatrix`：模型视图矩阵。
+- `gl_ProjectionMatrix`：投影矩阵。
+- `gl_NormalMatrix`：法线矩阵。
+
+## 内置函数
+
+GLSL 提供了一些内置函数，这些函数可以在着色器程序中使用。例如，`sin` 函数用于计算正弦值。
+
+```glsl
+float angle = 3.1415926 / 2.0;
+float result = sin(angle);
+```
+
+在 GLSL 中，有一些内置函数可以用于执行常见的数学和逻辑运算。
+
+- `abs()`：返回绝对值。
+- `sin()`：返回正弦值。
+- `cos()`：返回余弦值。
+- `tan()`：返回正切值。
+- `dot()`：返回两个向量的点积。
+- `cross()`：返回两个向量的叉积。
+
+## 着色器程序
+
+在 GLSL 中，着色器程序由顶点着色器、片元着色器和可选的几何着色器、曲面着色器和计算着色器组成。每个着色器负责不同的渲染阶段。
+
+```glsl
+#version 330 core
+
+layout(location = 0) in vec3 position;
+
+void main() {
+    gl_Position = vec4(position, 1.0);
+}
+```

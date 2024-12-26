@@ -2,10 +2,19 @@
 
 #include "include/private/base/EgAPI.h"
 
+#include "src/gpu/lantern/glsl/EgGLSLShaderBuilder.h"
+
 #include <string>
 #include <vector>
 
-class EG_API EgGLSLProgramBuilder {
+class EgGLSLVertextGeometryShaderBuilder : public EgGLSLShaderBuilder {
+public:
+    void insertFunction(const char* functionDefintion) {
+        this->functions().append(functionDefintion);
+    }
+};
+
+class EG_API EgGLSLVertexShaderBuilder {
 
 public:
 
