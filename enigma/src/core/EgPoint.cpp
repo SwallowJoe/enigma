@@ -3,7 +3,8 @@
 
 #include "include/core/EgPoint.h"
 #include "include/private/base/EgAssert.h"
-#include "include/private/base/EgDebug.h"
+#include "include/utils/EgLog.h"
+
 /**
  * 计算两点之间的欧几里得距离。
  * @param dx 两点在 x 轴方向上的距离。

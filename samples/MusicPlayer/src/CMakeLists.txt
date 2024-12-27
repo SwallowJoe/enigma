@@ -20,4 +20,5 @@ target_link_libraries(
     PRIVATE
     enigma 
     -lglfw
+    -lpthread
 )

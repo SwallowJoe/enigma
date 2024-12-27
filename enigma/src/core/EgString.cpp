@@ -5,12 +5,16 @@
 #include "include/core/EgString.h"
 
 #include "src/base/EgSafeMath.h"
+#include "src/base/EgUTF.h"
+#include "src/base/EgUtils.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <cstdarg>
 #include <string_view>
 #include <new>
+#include <utility>
 
 static const size_t kBufferSize = 1024;
 
@@ -188,19 +192,27 @@ char* EgStrAppendS64(char dst[], int64_t dec, int minDigits) {
  * @note 该函数不会检查 dst 是否为 nullptr
  */
 char* EgStrAppendScalar(char dst[], EgScalar dec) {
-    char buffer[kEgStrAppendScalar_MaxSize];
-    char* p = buffer + sizeof(buffer);
-    do {
-        *--p = EgToU8('0' + (int32_t)(dec % 10));
-        dec /= 10;
-    } while (dec != 0);
+    if (EgScalarIsNaN(dec)) {
+        strcpy(dst, "NaN");
+        return dst + 3;
+    }
 
-    EgAssert(p >= buffer);
-    size_t cp_len = buffer + sizeof(buffer) - p;
-    memcpy(dst, p, cp_len);
-    dst += cp_len;
+    if (!EgScalarIsFinite(dec)) {
+        if (dec > 0) {
+            strcpy(dst, "Inf");
+            return dst + 3;
+        } else {
+            strcpy(dst, "-Inf");
+            return dst + 4;
+        }
+    }
 
-    return dst;
+    static const char gFormat[] = "%.8g";
+    char buffer[kEgStrAppendScalar_MaxSize + 1];
+    int len = snprintf(buffer, sizeof(buffer), gFormat, dec);
+    memcpy(dst, buffer, len);
+    EgAssert(len <= kEgStrAppendScalar_MaxSize);
+    return dst + len;
 }
 
 ///////////////////////////////////////////////////////////////
@@ -247,7 +259,7 @@ static size_t check_add32(size_t base, size_t extra) {
  */
 std::shared_ptr<EgString::Rec> EgString::Rec::Make(const char str[], size_t len) {
     if (len == 0) {
-        return std::make_shared<Rec>(const_cast<Rec*>(&kEmptyRec));
+        return MakeEmpty();
     }
     EgSafeMath safe;
     uint32_t stringLen = safe.castTo<uint32_t>(len);
@@ -256,12 +268,19 @@ std::shared_ptr<EgString::Rec> EgString::Rec::Make(const char str[], size_t len)
     EgAssert(safe.ok());
 
     void* memory = ::operator new(allocationSize);
-    std::shared_ptr<Rec> rec(new(memory) Rec(stringLen, 1));
+    std::shared_ptr<Rec> rec(new(memory) Rec(stringLen, 1), [memory](Rec* rec) {
+        rec->unref();
+        ::operator delete(memory);
+    });
     if (str) {
         memcpy(rec->data(), str, len);
     }
     rec->data()[len] = '\0';
     return rec;
+}
+
+std::shared_ptr<EgString::Rec> EgString::Rec::MakeEmpty() {
+    return std::make_shared<Rec>(0, 0);
 }
 
 void EgString::Rec::ref() const {
@@ -289,7 +308,7 @@ bool EgString::Rec::unique() const {
 
 ///////////////////////////////////////////////////////////////
 
-EgString::EgString() : mRec(const_cast<Rec*>(&kEmptyRec)) {}
+EgString::EgString() : mRec(Rec::MakeEmpty()) {}
 
 EgString::EgString(size_t len) {
     mRec = Rec::Make(nullptr, len);
@@ -302,4 +321,276 @@ EgString::EgString(const char str[]) {
 
 EgString::EgString(const char str[], size_t len) {
     mRec = Rec::Make(str, len);
+}
+
+EgString::EgString(const EgString& other) : mRec(other.validate().mRec) {}
+
+EgString::EgString(EgString&& other) noexcept : mRec(std::move(other.validate().mRec)) {
+    other.mRec = Rec::MakeEmpty();
+}
+
+EgString::EgString(const std::string& str) {
+    mRec = Rec::Make(str.c_str(), str.size());
+}
+
+EgString::EgString(std::string_view str) {
+    mRec = Rec::Make(str.data(), str.size());
+}
+
+EgString::~EgString() {
+    this->validate();
+}
+
+bool EgString::equals(const EgString& other) const {
+    return mRec == other.mRec || this->equals(other.c_str(), other.size());
+}
+
+bool EgString::equals(const char str[]) const {
+    return this->equals(str, str ? strlen(str) : 0);
+}
+
+bool EgString::equals(const char str[], size_t len) const {
+    EgAssert(str != nullptr || len == 0);
+
+    return mRec->mLength == len && !memcmp(mRec->data(), str, len);
+}
+
+EgString& EgString::operator=(EgString&& other) {
+    this->validate();
+    if (mRec != other.mRec) {
+        this->swap(other);
+    }
+    return *this;
+}
+
+EgString& EgString::operator=(const EgString& other) {
+    this->validate();
+    mRec = other.mRec;
+    return *this;
+}
+
+EgString& EgString::operator=(const char str[]) {
+    this->validate();
+    mRec = Rec::Make(str, str ? strlen(str) : 0);
+    return *this;
+}
+
+void EgString::reset() {
+    this->validate();
+    mRec = Rec::MakeEmpty();
+}
+
+/**
+ * @brief 获取字符串的数据
+ */
+char* EgString::data() {
+    this->validate();
+    // 如果字符串长度为 0，则返回空指针
+    if (mRec->mLength) {
+        // 如果字符串不唯一，则复制一份数据
+        if (!mRec->unique()) {
+            mRec = Rec::Make(mRec->data(), mRec->mLength);
+        }
+    }
+    return mRec->data();
+}
+
+void EgString::resize(size_t len) {
+    len = trim_size_t_to_u32(len);
+    if (0 == len) {
+        this->reset();
+    } else if (mRec->unique() && ((len >> 2) <= (mRec->mLength >> 2))) {
+        char* p = data();
+        p[len] = '\0';
+        mRec->mLength = len;
+    } else {
+        EgString tmp(len);
+        char* dst = tmp.data();
+        int copyLen = std::min<uint32_t>(len, size());
+        memcpy(dst, c_str(), copyLen);
+        dst[copyLen] = '\0';
+        this->swap(tmp);
+    }
+}
+
+void EgString::set(const char str[]) {
+    this->set(str, str ? strlen(str) : 0);
+}
+
+void EgString::set(const char str[], size_t len) {
+    len = trim_size_t_to_u32(len);
+    if (len == 0) {
+        this->reset();
+    } else if (mRec->unique() && ((len >> 2) <= (mRec->mLength >> 2))) {
+        char* p = data();
+        if (str) {
+            memcpy(p, str, len);
+        }
+        p[len] = '\0';
+        mRec->mLength = len;
+    } else {
+        EgString tmp(str, len);
+        this->swap(tmp);
+    }
+}
+
+void EgString::insert(size_t offset, const char str[]) {
+    this->insert(offset, str, str ? strlen(str) : 0);
+}
+
+/**
+ * @brief 在字符串中插入字符串
+ * @param offset 插入的位置
+ * @param str 要插入的字符串
+ * @param len 要插入的字符串长度
+ * @note 如果 offset 大于字符串长度，则插入到字符串末尾
+ * @note 如果 len 为 0，则不插入
+ */
+void EgString::insert(size_t offset, const char str[], size_t len) {
+    if (len) {
+        size_t length = size();
+        if (offset > length) {
+            offset = length;
+        }
+
+        len = check_add32(offset, len);
+        if (0 == len) {
+            return;
+        }
+
+        if (mRec->unique() && (length >> 2) == (length + len >> 2)) {
+            char* dst = data();
+            if (offset < length) {
+                memmove(dst + offset + len, dst + offset, length - offset);
+            }
+            memcpy(dst + offset, str, len);
+            dst[length + len] = '\0';
+            mRec->mLength = EgToU32(length + len);
+        } else {
+            EgString tmp(length + len);
+            char* dst = tmp.data();
+            if (offset > 0) {
+                memcpy(dst, mRec->data(), offset);
+            }
+            memcpy(dst + offset, str, len);
+            if (offset < mRec->mLength) {
+                memcpy(dst + offset + len,
+                        mRec->data() + offset,
+                        mRec->mLength - offset);
+            }
+            swap(tmp);
+        }
+    }
+}
+
+void EgString::insertUnichar(size_t offset, char unichar) {
+    char buffer[EgUTF::kMaxBytesInUTF8Sequence];
+    size_t len = EgUTF::ToUTF8(unichar, buffer);
+    if (len) {
+        this->insert(offset, buffer, len);
+    }
+}
+
+void EgString::insertS32(size_t offset, int32_t value) {
+    char buffer[kEgStrAppendS32_MaxSize];
+    char* end = EgStrAppendS32(buffer, value);
+    this->insert(offset, buffer, end - buffer);
+}
+
+void EgString::insertS64(size_t offset, int64_t value, int minDigits) {
+    char buffer[kEgStrAppendS64_MaxSize];
+    char* end = EgStrAppendS64(buffer, value, minDigits);
+    this->insert(offset, buffer, end - buffer);
+}
+
+void EgString::insertU32(size_t offset, uint32_t value) {
+    char buffer[kEgStrAppendU32_MaxSize];
+    char* end = EgStrAppendU32(buffer, value);
+    this->insert(offset, buffer, end - buffer);
+}
+
+void EgString::insertU64(size_t offset, uint64_t value, int minDigits) {
+    char buffer[kEgStrAppendU64_MaxSize];
+    char* end = EgStrAppendU64(buffer, value, minDigits);
+    this->insert(offset, buffer, end - buffer);
+}
+
+void EgString::insertHex(size_t offset, uint32_t hex, int minDigits) {
+    minDigits = std::max(0, std::min(8, minDigits));
+
+    char buffer[8];
+    char* p = buffer + sizeof(buffer);
+    do {
+        *--p = EgHexadecimalDigits::gUpper[hex & 0xF];
+        hex >> 4;
+        minDigits--;
+    } while (hex != 0);
+
+    while (--minDigits >= 0) {
+        *--p = '0';
+    }
+
+    EgAssert(p >= buffer);
+    this->insert(offset, p, buffer + sizeof(buffer) - p);
+}
+
+
+void EgString::insertScalar(size_t offset, EgScalar value) {
+    char buffer[kEgStrAppendScalar_MaxSize];
+    char* end = EgStrAppendScalar(buffer, value);
+    this->insert(offset, buffer, end - buffer);
+}
+
+void EgString::remove(size_t offset, size_t length) {
+    size_t size = this->size();
+    if (offset >= size) {
+        return;
+    }
+
+    if (length > size - offset) {
+        length = size - offset;
+    }
+
+    EgAssert(length <= size);
+    EgAssert(offset <= size - length);
+
+    if (length > 0) {
+        EgString tmp(size - length);
+        char* dst = tmp.data();
+        const char* src = this->c_str();
+
+        if (offset > 0) {
+            memcpy(dst, src, offset);
+        }
+
+        size_t tail = size - offset - length;
+        if (tail > 0) {
+            memcpy(dst + offset, src + offset + length, tail);
+        }
+
+        this->swap(tmp);
+    }
+}
+
+void EgString::swap(EgString& other) {
+    this->validate();
+    other.validate();
+
+    std::swap(mRec, other.mRec);
+}
+
+void EgString::printf(const char fmt[], ...) {
+    va_list args;
+    va_start(args, fmt);
+    this->printfVAList(fmt, args);
+    va_end(args);
+}
+
+void EgString::printfVAList(const char fmt[], va_list args) {
+    char stackBuffer[kBufferSize];
+    StringBuffer buffer = apply_format_string(fmt, args, stackBuffer, this);
+
+    if (buffer.mData == stackBuffer) {
+        this->set(buffer.mData, buffer.mLength);
+    }
 }

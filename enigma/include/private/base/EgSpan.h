@@ -17,12 +17,12 @@ class EgSpan {
 public:
     constexpr EgSpan(): mPtr{nullptr}, mSize{0} {}
 
-    template <typename Integer, std::enable_if<std::is_integral_v(Integer), bool> = true>
+    template <typename Integer, std::enable_if_t<std::is_integral_v<Integer>, bool> = true>
     constexpr EgSpan(T* ptr, Integer size): mPtr{ptr}, mSize{EgToSizeT(size)} {
-        EG_ASSERT(size >= 0 && size <= kMaxSize);
+        EgAssert(size >= 0 && size <= kMaxSize);
     }
 
-    template <typename U, typename = std::enable_if<std::is_integral_v<Integer>, bool> = true>
+    template <typename U, typename = std::enable_if_t<std::is_same_v<const U, T>>>
     constexpr EgSpan(const EgSpan<U>& other): mPtr{other.data()}, mSize{other.size()} {}
 
     constexpr EgSpan(const EgSpan& other) : mPtr{other.mPtr}, mSize{other.mSize} {}
@@ -53,7 +53,7 @@ public:
     }
 
     constexpr T& operator[](size_t index) const {
-        EG_ASSERT(index < mSize);
+        EgAssert(index < mSize);
         return mPtr[index];
     }
 
@@ -68,11 +68,11 @@ public:
     constexpr size_t size() const { return mSize; }
     constexpr size_t size_bytes() const { return mSize * sizeof(T); }
     constexpr EgSpan<T> first(size_t prefixLen) const {
-        EG_ASSERT(prefixLen <= mSize);
+        EgAssert(prefixLen <= mSize);
         return EgSpan{mPtr, prefixLen};
     }
     constexpr EgSpan<T> last(size_t postfixLen) const {
-        EG_ASSERT(postfixLen <= mSize);
+        EgAssert(postfixLen <= mSize);
         return EgSpan{mPtr + mSize - postfixLen, postfixLen};
     }
 
@@ -81,8 +81,8 @@ public:
     }
 
     constexpr EgSpan<T> subspan(size_t offset, size_t length) const {
-        EG_ASSERT(offset <= mSize);
-        EG_ASSERT(length <= mSize - offset);
+        EgAssert(offset <= mSize);
+        EgAssert(length <= mSize - offset);
         return EgSpan{mPtr + offset, length};
     }
 

@@ -55,7 +55,7 @@ protected:
 
     EgGLSLProgramBuilder* mProgram;
     std::string mCompilerString;
-    EgTArray<ePrealloc, std::string> mShaderStrings;
+    EgSTArray<ePrealloc, std::string> mShaderStrings;
 
     EgSTArray<1, std::string> mLayoutParams[];
 };

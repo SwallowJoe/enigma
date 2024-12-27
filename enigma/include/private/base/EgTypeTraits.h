@@ -34,6 +34,14 @@ struct eg_has_trivially_relocatable_member : std::false_type {};
 
 // 模板结构体 eg_is_trivially_relocatable
 // 用于检查类型 T 是否为 trivially relocatable
+// 通过 std::disjunction 组合 std::is_trivially_copyable 和 eg_has_trivially_relocatable_member 的结果
+// 即如果 T 是 trivially copyable 或者具有 trivially relocatable 成员，则认为 T 是 trivially relocatable
+template<typename T>
+struct eg_is_trivially_relocatable
+        : std::disjunction<std::is_trivially_copyable<T>, eg_has_trivially_relocatable_member<T>> {};
+
+// 模板结构体 eg_is_trivially_relocatable
+// 用于检查类型 T 是否为 trivially relocatable
 // 特化版本，当 T 是 std::unique_ptr 时，假设它是 trivially relocatable
 template<typename T>
 struct eg_is_trivially_relocatable<std::unique_ptr<T>> : std::true_type {};
@@ -45,13 +53,6 @@ template<typename T>
 struct eg_has_trivially_relocatable_member<T, std::void_t<typename T::eg_is_trivially_relocatable>>
         : T::eg_is_trivially_relocatable {};
 
-// 模板结构体 eg_is_trivially_relocatable
-// 用于检查类型 T 是否为 trivially relocatable
-// 通过 std::disjunction 组合 std::is_trivially_copyable 和 eg_has_trivially_relocatable_member 的结果
-// 即如果 T 是 trivially copyable 或者具有 trivially relocatable 成员，则认为 T 是 trivially relocatable
-template<typename T>
-struct eg_is_trivially_relocatable
-        : std::disjunction<std::is_trivially_copyable<T>, eg_has_trivially_relocatable_member<T>> {};
 
 // 模板变量 eg_is_trivially_relocatable_v
 // 用于检查类型 T 是否为 trivially relocatable

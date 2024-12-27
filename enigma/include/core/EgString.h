@@ -1,6 +1,8 @@
 #pragma once
 
 #include "include/private/base/EgAssert.h"
+#include "include/private/base/EgAPI.h"
+
 #include "include/core/EgScalar.h"
 #include "include/private/base/EgTo.h"
 
@@ -9,11 +11,12 @@
 #include <cstdint>
 #include <cstddef>
 #include <atomic>
+#include <memory>
 
 /**
  * @brief 检查字符串是否以指定前缀开头
  */
-static inline bool EgStrStartsWith(const char[] str, const char[] prefix) {
+static inline bool EgStrStartsWith(const char str[], const char prefix[]) {
     EgAssert(str != nullptr);
     EgAssert(prefix != nullptr);
     // strncmp 比较字符串前缀，返回 0 表示相等
@@ -31,12 +34,12 @@ static inline bool EgStrStartsWith(const char str[], const char prefixChar) {
 }
 
 
-bool EgStrEndsWith(const char[] str, const char[] suffixStr);
-bool EgStrEndsWith(const char[] str, const char suffixChar);
+bool EgStrEndsWith(const char str[], const char suffixStr[]);
+bool EgStrEndsWith(const char str[], const char suffixChar);
 
-int EgStrStartsWithOneOf(const char str[], const char[] prefixes);
+int EgStrStartsWithOneOf(const char str[], const char prefixes[]);
 
-static inline int EgStrFind(const char str[], const char[] substr) {
+static inline int EgStrFind(const char str[], const char substr[]) {
     // strstr 查找子串
     // 如果找到子字符串，返回指向 haystack 中第一次出现 needle 的指针。
     // 如果没有找到子字符串，返回 nullptr。
@@ -49,11 +52,11 @@ static inline int EgStrFind(const char str[], const char[] substr) {
 }
 
 
-static inline int EgStrFindLastOf(const char str[], const char[] substr) {
-    // strrchr 查找子串
+static inline int EgStrFindLastOf(const char str[], const char subchar) {
+    // strrchr成员函数在字符串中查找最后一次出现指定字符的位置
     // 如果找到子字符串，返回指向 haystack 中最后一次出现 needle 的指针。
     // 如果没有找到子字符串，返回 nullptr。
-    const char* found = strrchr(str, substr);
+    const char* found = strrchr(str, subchar);
     // 返回子串在原字符串中的位置
     // 如果找不到则返回 -1
     // &str[0] 表示字符串的首地址
@@ -61,7 +64,7 @@ static inline int EgStrFindLastOf(const char str[], const char[] substr) {
     return found ? EgToInt(found - &str[0]) : -1;
 }
 
-static inline bool EgStrContains(const char str[], const char[] substr) {
+static inline bool EgStrContains(const char str[], const char substr[]) {
     return EgStrFind(str, substr) != -1;
 }
 
@@ -91,26 +94,26 @@ class EG_API EgString {
 public:
                 EgString();
     explicit    EgString(size_t len);
-    explicit    EgString(const char[] str);
-                EgString(const char[] str, size_t len);
+    explicit    EgString(const char str[]);
+                EgString(const char str[], size_t len);
                 EgString(const EgString& other);
                 EgString(EgString&& other) noexcept;
     explicit    EgString(const std::string& str);
     explicit    EgString(std::string_view str);
                 ~EgString();
 
-    bool isEmpty() const;
-    size_t size() const;
-    const char* c_str() const;
-    const char* data() const;
+    bool isEmpty() const { return mRec->mLength == 0; }
+    size_t size() const { return (size_t)(mRec->mLength); }
+    const char* c_str() const { return mRec->data(); }
+    const char* data() const { return mRec->data(); }
     
-    char operator[](size_t index) const;
+    char operator[](size_t index) const { return data()[index]; }
 
     bool equals(const EgString& other) const;
-    bool equals(const char[] str) const;
-    bool equals(const char[] str, size_t len) const;
+    bool equals(const char str[]) const;
+    bool equals(const char str[], size_t len) const;
 
-    bool startsWith(const char[] prefix) const {
+    bool startsWith(const char prefix[]) const {
         return EgStrStartsWith(mRec->data(), prefix);
     }
 
@@ -118,7 +121,7 @@ public:
         return EgStrStartsWith(mRec->data(), prefixChar);
     }
 
-    bool endsWith(const char[] suffix) const {
+    bool endsWith(const char suffix[]) const {
         return EgStrEndsWith(mRec->data(), suffix);
     }
 
@@ -126,7 +129,7 @@ public:
         return EgStrEndsWith(mRec->data(), suffixChar);
     }
 
-    bool contains(const char[] substr) const {
+    bool contains(const char substr[]) const {
         return EgStrContains(mRec->data(), substr);
     }
 
@@ -134,12 +137,12 @@ public:
         return EgStrContains(mRec->data(), substrChar);
     }
 
-    int find(const char[] substr) const {
+    int find(const char substr[]) const {
         return EgStrFind(mRec->data(), substr);
     }
 
-    int findLastOf(const char[] substr) const {
-        return EgStrFindLastOf(mRec->data(), substr);
+    int findLastOf(const char subchar) const {
+        return EgStrFindLastOf(mRec->data(), subchar);
     }
 
     friend bool operator==(const EgString& lhs, const EgString& rhs) {
@@ -151,8 +154,8 @@ public:
     }
 
     EgString& operator=(const EgString& other);
-    EgString& operator=(EgString&& other) noexcept;
-    EgString& operator=(const char[] str);
+    EgString& operator=(EgString&& other);
+    EgString& operator=(const char str[]);
 
     char* data();
     char& operator[](size_t index) { return data()[index]; }
@@ -161,12 +164,12 @@ public:
     void resize(size_t len);
 
     void set(const EgString& src) { *this = src; }
-    void set(const char[] str);
-    void set(const char[] str, size_t len);
+    void set(const char str[]);
+    void set(const char str[], size_t len);
     void set(std::string_view str) { this->set(str.data(), str.size()); }
 
-    void insert(size_t offset, const char[] str);
-    void insert(size_t offset, const char[] str, size_t len);
+    void insert(size_t offset, const char str[]);
+    void insert(size_t offset, const char str[], size_t len);
     void insert(size_t offset, const EgString& str) { this->insert(offset, str.c_str(), str.size()); }
     void insert(size_t offset, const std::string_view str) { this->insert(offset, str.data(), str.size()); }
     void insertUnichar(size_t offset, char unichar);
@@ -177,8 +180,8 @@ public:
     void insertScalar(size_t offset, EgScalar value);
     void insertHex(size_t offset, uint32_t value, int minDigits = 0);
 
-    void append(const char[] str) { this->insert((size_t)-1, str); }
-    void append(const char[] str, size_t len) { this->insert((size_t)-1, str, len); }
+    void append(const char str[]) { this->insert((size_t)-1, str); }
+    void append(const char str[], size_t len) { this->insert((size_t)-1, str, len); }
     void append(const EgString& str) { this->insert((size_t)-1, str.c_str(), str.size()); }
     void append(const std::string_view str) { this->insert((size_t)-1, str.data(), str.size()); }
     void appendUnichar(char unichar) { this->insertUnichar((size_t)-1, unichar); }
@@ -189,8 +192,8 @@ public:
     void appendScalar(EgScalar value) { this->insertScalar((size_t)-1, value); }
     void appendHex(uint32_t value, int minDigits = 0) { this->insertHex((size_t)-1, value, minDigits); }
 
-    void prepend(const char[] str) { this->insert(0, str); }
-    void prepend(const char[] str, size_t len) { this->insert(0, str, len); }
+    void prepend(const char str[]) { this->insert(0, str); }
+    void prepend(const char str[], size_t len) { this->insert(0, str, len); }
     void prepend(const EgString& str) { this->insert(0, str.c_str(), str.size()); }
     void prepend(const std::string_view str) { this->insert(0, str.data(), str.size()); }
     void prependUnichar(char unichar) { this->insertUnichar(0, unichar); }
@@ -201,12 +204,12 @@ public:
     void prependScalar(EgScalar value) { this->insertScalar(0, value); }
     void prependHex(uint32_t value, int minDigits = 0) { this->insertHex(0, value, minDigits); }
 
-    void printf(const char[] fmt, ...);
-    
+    void printf(const char fmt[], ...);
+    void printfVAList(const char fmt[], va_list args);
 
     void remove(size_t offset, size_t len);
 
-    EgString& operator+=(const char[] str) { this->append(str); return *this; }
+    EgString& operator+=(const char str[]) { this->append(str); return *this; }
     EgString& operator+=(const EgString& str) { this->append(str); return *this; }
     EgString& operator+=(const std::string_view str) { this->append(str); return *this; }
 
@@ -214,9 +217,10 @@ public:
 private:
     struct Rec {
         public:
-            constexpr Rec(uint32_t len, uint32_t refCnt): mLength(len), mRefCount(refCnt) {}
+            constexpr Rec(uint32_t len, uint32_t refCnt): mLength(len), mRefCnt(refCnt) {}
 
             static std::shared_ptr<Rec> Make(const char str[], size_t len);
+            static std::shared_ptr<Rec> MakeEmpty();
             char* data() { return mBeginningOfData; }
             const char* data() const { return mBeginningOfData; }
             void ref() const;
@@ -225,7 +229,7 @@ private:
 
             uint32_t mLength;
         private:
-            mutable std::atomic<uint32_t> mRefCount;
+            mutable std::atomic<uint32_t> mRefCnt;
             char mBeginningOfData[1] = { '\0' };
 
             void operator delete(void* ptr) {
@@ -233,8 +237,8 @@ private:
             }
     };
 
-    std::shared_ptr<Rec> mRec;
     const EgString& validate() const { return *this; }
 
+    std::shared_ptr<Rec> mRec;
     static const Rec kEmptyRec;
 };

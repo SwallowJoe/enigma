@@ -1,5 +1,7 @@
 #pragma once
 
+#include "include/private/base/EgTo.h"
+#include "include/private/base/EgSpan.h"
 #include "include/private/base/EgDebug.h"
 #include "include/private/base/EgAssert.h"
 #include "include/private/base/EgTypeTraits.h"
@@ -458,7 +460,7 @@ private:
         }
     }
 
-    void move(int dst int src) {
+    void move(int dst, int src) {
         if constexpr (MEM_MOVE) {
             memcpy(static_cast<void*>(&mData[dst]),
                     static_cast<const void*>(&mData[src]),
@@ -570,4 +572,4 @@ public:
 
     using BASE::data;
     using BASE::size;
-}
+};
